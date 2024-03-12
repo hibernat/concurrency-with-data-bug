@@ -12,6 +12,7 @@ import OSLog
 struct MainFile {
     
     static let logger = Logger()
+    static let fileService = FileService()
     
     static func main() async {
         do {
@@ -29,7 +30,8 @@ struct MainFile {
             for _ in 0 ..< 1_000_000 {
                 let operation: @Sendable () async -> Result<Void, Error> = { @Sendable in
                     async let result = Task {
-                        let data = try! Data(contentsOf: URL(filePath: "path-to/file.lzfse"))
+                        let url = URL(filePath: "path-to/file.lzfse")
+                        let data = try! await fileService.contentsOf(url: url)
                         let _ = try (data as NSData).decompressed(using: .lzfse)
                     }.result
                     _ = await result
@@ -50,8 +52,21 @@ struct MainFile {
                 
             }
             // all tasks are finished
-            
         }
     }
     
+}
+
+actor FileService {
+    
+    let logger = Logger()
+    
+    init() { }
+    
+    func contentsOf(url: URL) throws -> Data {
+        logger.debug("File operation BEGIN")
+        let data = try Data(contentsOf: url)
+        logger.debug("File operation END")
+        return data
+    }
 }
