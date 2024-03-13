@@ -16,25 +16,43 @@ struct MainFile {
     
     static func main() async {
         do {
-            logger.info("Started")
+            logger.info("Started Swift concurrency")
             try await run(maxTasksInGroup: 16)
-            logger.info("Finished")
+            logger.info("Finished Swift concurrency")
         } catch {
-            logger.error("Error: \(error)")
+            logger.error("Error: Swift concurrency \(error)")
         }
+        
+        /*
+        logger.info("Started DispatchQueue")
+        DispatchQueue.concurrentPerform(iterations: 1_000_000) { i in
+            do {
+                let url = URL(filePath: "/Users/mbernat/file.lzfse")
+                let data = try! Data(contentsOf: url)
+//                let _ = try (data as NSData).decompressed(using: .lzfse)
+                let _ = try (data as NSData).compressed(using: .lzfse)
+                logger.debug("Finished iteration # \(i)")
+            } catch {
+                logger.error("Error DispatchQueue: \(error)")
+            }
+        }
+        logger.info("Finished DispatchQueue")
+         */
     }
     
     static func run(maxTasksInGroup: Int) async throws {
         await withTaskGroup(of: Result<Void, Error>.self) { group in
             var tasksInGroup = 0
-            for _ in 0 ..< 1_000_000 {
+            for i in 0 ..< 1_000_000 {
                 let operation: @Sendable () async -> Result<Void, Error> = { @Sendable in
                     async let result = Task {
                         let url = URL(filePath: "path-to/file.lzfse")
                         let data = try! await fileService.contentsOf(url: url)
                         let _ = try (data as NSData).decompressed(using: .lzfse)
+//                        let _ = try (data as NSData).compressed(using: .lzfse)
                     }.result
                     _ = await result
+                    logger.debug("Finished task # \(i)")
                     return .success(())
                 }
                 if tasksInGroup < maxTasksInGroup {
@@ -59,14 +77,10 @@ struct MainFile {
 
 actor FileService {
     
-    let logger = Logger()
-    
     init() { }
     
     func contentsOf(url: URL) throws -> Data {
-        logger.debug("File operation BEGIN")
         let data = try Data(contentsOf: url)
-        logger.debug("File operation END")
         return data
     }
 }
